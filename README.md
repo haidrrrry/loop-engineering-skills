@@ -1,5 +1,7 @@
 # loop-engineering-skills
 
+![loop-engineering-skills banner](assets/banner.png)
+
 **A self-correcting brain for your coding agent.** Clone it, install it, and
 your agent verifies its own work against real gates, remembers why things
 failed, and gets smarter every cycle — instead of confidently shipping silent
@@ -46,6 +48,8 @@ repo ships all three:
    review, decompose, rubric, red team), each tied to an external anchor so
    iteration improves output instead of churning it. (the `loop-engineering`
    skill)
+
+![body vs brain](assets/body-brain.png)
 
 ## What's in the box
 
