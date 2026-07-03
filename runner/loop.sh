@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# loop.sh — the loop: task -> act -> verify -> reflect -> retry or escalate.
+# Requires Claude Code (`claude` CLI) installed and authenticated.
+# Usage: .loop/bin/loop.sh "your task" [max_attempts]
+set -uo pipefail
+
+TASK="${1:?Usage: loop.sh \"task description\" [max_attempts]}"
+MAX_ATTEMPTS="${2:-3}"
+LOOP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+if ! command -v claude >/dev/null 2>&1; then
+  echo "ERROR: Claude Code CLI not found. Install it first: https://code.claude.com" >&2
+  exit 1
+fi
+
+for f in GATES.md LESSONS.md STATE.md; do
+  [ -f "$LOOP_DIR/$f" ] || { echo "ERROR: $LOOP_DIR/$f missing. Run install.sh first." >&2; exit 1; }
+done
+
+# Trust-aware permissions: only grant edit rights at L2+.
+# At L1 the agent produces proposals and diffs — it does not modify files.
+TRUST_LEVEL="$(grep -oE 'Current level: \*\*L[123]\*\*' "$LOOP_DIR/GATES.md" | grep -oE 'L[123]' || echo L1)"
+PERM_ARGS=()
+if [ "$TRUST_LEVEL" != "L1" ]; then
+  PERM_ARGS=(--permission-mode acceptEdits)
+fi
+echo "==> Trust level: $TRUST_LEVEL $([ "$TRUST_LEVEL" = "L1" ] && echo '(report-only: agent proposes, you apply)')"
+
+attempt=1
+last_verdict=""
+
+while [ "$attempt" -le "$MAX_ATTEMPTS" ]; do
+  echo "==> Attempt $attempt/$MAX_ATTEMPTS: $TASK"
+
+  # ACT + VERIFY + REFLECT happen inside one agent run, governed by the brain
+  # files and the installed loop-* skills. The prompt enforces the contract.
+  claude -p "You are running inside a self-correcting loop (attempt $attempt of $MAX_ATTEMPTS).
+
+TASK: $TASK
+
+MANDATORY PROTOCOL:
+1. Read .loop/LESSONS.md — apply the last 3 lessons to this attempt.
+2. Read .loop/STATE.md — do not redo completed work; respect blockers.
+3. Read .loop/GATES.md — identify which gates apply to this task, and WRITE
+   THE CONCRETE CHECKS FIRST, before implementing anything.
+4. Do the task.
+5. Run every applicable gate for real (execute tests/commands where possible).
+6. Update .loop/STATE.md with what you completed or what blocked you.
+7. Append ONE entry to .loop/LESSONS.md in the required format — even on
+   success (note what worked).
+8. End your reply with exactly one line: VERDICT: PASS or VERDICT: FAIL
+   followed by a one-line reason.
+9. Trust level is $TRUST_LEVEL. At L1 you must NOT modify files — output
+   proposed changes as diffs for the human to apply.
+
+Previous attempt verdict, if any: ${last_verdict:-none}" \
+    "${PERM_ARGS[@]}" 2>&1 | tee "$LOOP_DIR/last-run.log"
+
+  if grep -q "VERDICT: PASS" "$LOOP_DIR/last-run.log"; then
+    echo "==> PASS on attempt $attempt. Review the diff before you ship — the loop verifies, you decide."
+    exit 0
+  fi
+
+  last_verdict="$(grep "VERDICT:" "$LOOP_DIR/last-run.log" | tail -1 || echo "VERDICT: FAIL (no verdict emitted)")"
+  echo "==> $last_verdict"
+  attempt=$((attempt + 1))
+done
+
+echo ""
+echo "==> ESCALATION: $MAX_ATTEMPTS attempts failed. The loop is handing off to you."
+echo "    Context: .loop/last-run.log (full last attempt)"
+echo "              .loop/LESSONS.md (what it learned and tried)"
+echo "              .loop/STATE.md   (where it got stuck)"
+exit 1

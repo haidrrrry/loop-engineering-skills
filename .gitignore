@@ -1,0 +1,5 @@
+dist/
+*.log
+.loop/last-run.log
+.DS_Store
+node_modules/
