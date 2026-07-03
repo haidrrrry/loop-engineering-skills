@@ -104,18 +104,4 @@ self-bias (Xu 2024), the self-correction blind spot (Tsui 2025). Summarized
 with the design consequences in
 [`skills/loop-engineering/references/research-notes.md`](skills/loop-engineering/references/research-notes.md).
 
-## Credits
-
-The term and the system-level framing come from
-[Addy Osmani's Loop Engineering essay](https://addyosmani.com/blog/loop-engineering/),
-Boris Cherny's "my job is to write loops," and
-[Cobus Greyling's loop-engineering](https://github.com/cobusgreyling/loop-engineering)
-reference repo. This project is an independent implementation focused on the
-verification and memory layer — the brain the loops run on.
-
-## License
-
-MIT
-
-Topics: `loop-engineering` `claude-skills` `ai-agents` `self-correction`
-`prompt-engineering` `llm` `claude-code` `agent-verification`
+ 
