@@ -45,23 +45,30 @@ MANDATORY PROTOCOL:
 3. Read .loop/GATES.md — identify which gates apply to this task, and WRITE
    THE CONCRETE CHECKS FIRST, before implementing anything.
 4. Do the task.
-5. Run every applicable gate for real (execute tests/commands where possible).
+5. VERIFY WITH A CLEAN-CONTEXT CHECKER: dispatch verification to a subagent
+   (maker/checker recipe 3). Give it ONLY the original task text,
+   .loop/GATES.md, and the diff/artifact — never your reasoning or
+   self-assessment. It runs every applicable gate for real (executing
+   tests/commands where possible) and returns its own verdict with evidence.
+   If subagents are unavailable, perform a hard persona break and run the
+   gates as a reviewer who has never seen this task solved.
 6. Update .loop/STATE.md with what you completed or what blocked you.
 7. Append ONE entry to .loop/LESSONS.md in the required format — even on
    success (note what worked).
-8. End your reply with exactly one line: VERDICT: PASS or VERDICT: FAIL
-   followed by a one-line reason.
+8. End your reply with exactly one line, plain text, starting at column one,
+   no markdown formatting: VERDICT: PASS or VERDICT: FAIL, followed by a
+   one-line reason.
 9. Trust level is $TRUST_LEVEL. At L1 you must NOT modify files — output
    proposed changes as diffs for the human to apply.
 
 Previous attempt verdict, if any: ${last_verdict:-none}" \
-    "${PERM_ARGS[@]}" 2>&1 | tee "$LOOP_DIR/last-run.log"
+    ${PERM_ARGS[@]+"${PERM_ARGS[@]}"} 2>&1 | tee "$LOOP_DIR/last-run.log"
   claude_status=${PIPESTATUS[0]}
   set -o pipefail
 
   # A CLI failure (auth, network, crash) is not a task failure — retrying
   # burns attempts on the same error. Stop and tell the human.
-  if [ "$claude_status" -ne 0 ] && ! grep -qE '^VERDICT:' "$LOOP_DIR/last-run.log"; then
+  if [ "$claude_status" -ne 0 ] && ! grep -qE '^[[:space:]]*\**VERDICT:' "$LOOP_DIR/last-run.log"; then
     echo "==> ERROR: claude exited with status $claude_status and emitted no verdict." >&2
     echo "    This looks like a CLI/auth/network problem, not a task failure." >&2
     echo "    Check .loop/last-run.log, fix the environment, and rerun." >&2
@@ -70,7 +77,9 @@ Previous attempt verdict, if any: ${last_verdict:-none}" \
 
   # Only trust the LAST verdict line. The protocol text itself contains the
   # words "VERDICT: PASS", so matching anywhere in the log gives false passes.
-  last_verdict="$(grep -E '^VERDICT:' "$LOOP_DIR/last-run.log" | tail -1 || true)"
+  # Tolerate markdown decoration (bold, leading spaces) around the verdict,
+  # then normalize it before matching.
+  last_verdict="$(grep -E '^[[:space:]]*\**VERDICT:' "$LOOP_DIR/last-run.log" | tail -1 | sed -E 's/^[[:space:]]*\**//; s/\**[[:space:]]*$//' || true)"
   if [ -z "$last_verdict" ]; then
     last_verdict="VERDICT: FAIL (no verdict emitted)"
   fi

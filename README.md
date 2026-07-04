@@ -10,6 +10,7 @@ installed in 60 seconds: verification gates written *before* the code,
 memory that learns from every failure, and correction loops that actually
 work (naive "double-check yourself" is proven to make output *worse*).
 
+![gates](https://github.com/haidrrrry/loop-engineering-skills/actions/workflows/ci.yml/badge.svg)
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
 ![Made with bash + markdown](https://img.shields.io/badge/made%20with-bash%20%2B%20markdown-1a1033?style=flat-square)
 ![Works with Claude Code](https://img.shields.io/badge/works%20with-Claude%20Code-FF5B33?style=flat-square)
