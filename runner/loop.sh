@@ -34,6 +34,7 @@ while [ "$attempt" -le "$MAX_ATTEMPTS" ]; do
 
   # ACT + VERIFY + REFLECT happen inside one agent run, governed by the brain
   # files and the installed loop-* skills. The prompt enforces the contract.
+  set +o pipefail
   claude -p "You are running inside a self-correcting loop (attempt $attempt of $MAX_ATTEMPTS).
 
 TASK: $TASK
@@ -55,13 +56,32 @@ MANDATORY PROTOCOL:
 
 Previous attempt verdict, if any: ${last_verdict:-none}" \
     "${PERM_ARGS[@]}" 2>&1 | tee "$LOOP_DIR/last-run.log"
+  claude_status=${PIPESTATUS[0]}
+  set -o pipefail
 
-  if grep -q "VERDICT: PASS" "$LOOP_DIR/last-run.log"; then
-    echo "==> PASS on attempt $attempt. Review the diff before you ship — the loop verifies, you decide."
-    exit 0
+  # A CLI failure (auth, network, crash) is not a task failure — retrying
+  # burns attempts on the same error. Stop and tell the human.
+  if [ "$claude_status" -ne 0 ] && ! grep -qE '^VERDICT:' "$LOOP_DIR/last-run.log"; then
+    echo "==> ERROR: claude exited with status $claude_status and emitted no verdict." >&2
+    echo "    This looks like a CLI/auth/network problem, not a task failure." >&2
+    echo "    Check .loop/last-run.log, fix the environment, and rerun." >&2
+    exit 2
   fi
 
-  last_verdict="$(grep "VERDICT:" "$LOOP_DIR/last-run.log" | tail -1 || echo "VERDICT: FAIL (no verdict emitted)")"
+  # Only trust the LAST verdict line. The protocol text itself contains the
+  # words "VERDICT: PASS", so matching anywhere in the log gives false passes.
+  last_verdict="$(grep -E '^VERDICT:' "$LOOP_DIR/last-run.log" | tail -1 || true)"
+  if [ -z "$last_verdict" ]; then
+    last_verdict="VERDICT: FAIL (no verdict emitted)"
+  fi
+
+  case "$last_verdict" in
+    "VERDICT: PASS"*)
+      echo "==> PASS on attempt $attempt. Review the diff before you ship — the loop verifies, you decide."
+      exit 0
+      ;;
+  esac
+
   echo "==> $last_verdict"
   attempt=$((attempt + 1))
 done

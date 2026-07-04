@@ -19,6 +19,13 @@ for f in LESSONS.md GATES.md STATE.md; do
   fi
 done
 
+# Keep the run log out of the project's commits; the brain files SHOULD be
+# committed (they are the loop's memory), so only the log is ignored.
+if [ ! -f "$PROJECT_DIR/.loop/.gitignore" ]; then
+  printf 'last-run.log\n' > "$PROJECT_DIR/.loop/.gitignore"
+  echo "  create .loop/.gitignore (ignores last-run.log)"
+fi
+
 # 2. Skills -> project-level Claude Code skills
 mkdir -p "$PROJECT_DIR/.claude/skills"
 for skill in loop-engineering loop-memory loop-verifier; do
