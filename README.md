@@ -2,10 +2,19 @@
 
 ![loop-engineering-skills banner](assets/banner.png)
 
-**A self-correcting brain for your coding agent.** Clone it, install it, and
-your agent verifies its own work against real gates, remembers why things
-failed, and gets smarter every cycle — instead of confidently shipping silent
-mistakes.
+> **Your coding agent says "done." This makes it prove it.**
+
+AI agents ship silent bugs, treat your requirements as suggestions, and
+repeat yesterday's mistakes. This repo is the fix — a self-correcting brain
+installed in 60 seconds: verification gates written *before* the code,
+memory that learns from every failure, and correction loops that actually
+work (naive "double-check yourself" is proven to make output *worse*).
+
+![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
+![Made with bash + markdown](https://img.shields.io/badge/made%20with-bash%20%2B%20markdown-1a1033?style=flat-square)
+![Works with Claude Code](https://img.shields.io/badge/works%20with-Claude%20Code-FF5B33?style=flat-square)
+![Prompts for ChatGPT · Kimi · Gemini](https://img.shields.io/badge/prompts%20for-ChatGPT%20·%20Kimi%20·%20Gemini-8A2BE2?style=flat-square)
+![PRs welcome](https://img.shields.io/badge/PRs-welcome-4ADE80?style=flat-square)
 
 Loop engineering is the trending idea (Addy Osmani, Boris Cherny, Cobus
 Greyling): stop prompting agents, design the loops that prompt them. This
@@ -37,17 +46,20 @@ models un-fix correct answers more often than they catch real errors
 The fix that holds up in research and practice has three parts, and this
 repo ships all three:
 
-1. **Gates** — verification written *before* implementation, from the task,
-   so the agent can't write checks that mirror its own bugs. (`.loop/GATES.md`
-   + the `loop-verifier` skill)
-2. **Memory** — Reflexion-style lessons: after every attempt the agent writes
-   what failed and why, and reads recent lessons before acting. In the
-   original research this beats blind retrying by 11–22%. (`.loop/LESSONS.md`
-   + the `loop-memory` skill)
-3. **Anchored answer loops** — five correction loops (verify, stranger
-   review, decompose, rubric, red team), each tied to an external anchor so
-   iteration improves output instead of churning it. (the `loop-engineering`
-   skill)
+1. **Gates** — verification written *before* implementation, from the task, so the agent can't write checks that mirror its own bugs (`.loop/GATES.md` plus the `loop-verifier` skill).
+2. **Memory** — Reflexion-style lessons: after every attempt the agent writes what failed and why, and reads recent lessons before acting. In the original research this beats blind retrying by 11–22% (`.loop/LESSONS.md` plus the `loop-memory` skill).
+3. **Anchored answer loops** — five correction loops (verify, stranger review, decompose, rubric, red team), each tied to an external anchor so iteration improves output instead of churning it (the `loop-engineering` skill).
+
+## Prompting vs loop engineering
+
+|  | Prompt engineering | This repo |
+|---|---|---|
+| **You write** | one clever prompt | the rules of the cycle |
+| **Verification** | "looks good to me" | gates written before the code |
+| **Memory** | goldfish — every chat starts cold | lessons read before every attempt |
+| **Failure** | you notice it later | caught, retried, or escalated to you |
+| **Requirements** | suggestions the AI may ignore | contracts the verdict enforces |
+| **Your role** | re-prompting all day | reviewing what passed the gates |
 
 ![body vs brain](assets/body-brain.png)
 
@@ -93,6 +105,15 @@ The brain files are editable contracts, not magic:
 - **The failure catalog:** ten documented ways loops go wrong and how this
   design blocks each one: [`docs/anti-patterns.md`](docs/anti-patterns.md).
 
+## Where people run this
+
+The six system-loop patterns in [`docs/patterns.md`](docs/patterns.md) cover
+the jobs people actually automate: PR review babysitting, CI failure triage,
+dependency updates, changelog drafting, repo cleanup, and daily triage — each
+with its gates, what memory learns, and when it escalates to you. And the
+five correction loops work on any single task in any AI, no install needed:
+[`prompts/copy-paste-loops.md`](prompts/copy-paste-loops.md).
+
 ## See it catch a real bug
 
 [`examples/verify-loop-code.md`](examples/verify-loop-code.md): a median
@@ -108,4 +129,44 @@ self-bias (Xu 2024), the self-correction blind spot (Tsui 2025). Summarized
 with the design consequences in
 [`skills/loop-engineering/references/research-notes.md`](skills/loop-engineering/references/research-notes.md).
 
- 
+## FAQ
+
+**Does this need Claude Code?**
+The runner does — `runner/loop.sh` drives Claude Code headless. The five
+correction loops don't: they work in ChatGPT, Kimi, Gemini, or anything else
+via [`prompts/copy-paste-loops.md`](prompts/copy-paste-loops.md).
+
+**Is this the same as cobusgreyling/loop-engineering?**
+No. That repo is the system-level reference for orchestrating loops; this one
+is the verification-and-memory layer the loops run on. It's credited below.
+
+**Where does the +11–22% claim come from?**
+The Reflexion paper's benchmarks (Shinn et al., 2023). This repo implements
+that mechanism; the assembled system itself hasn't been benchmarked. So:
+research-backed, not research-proven.
+
+**Why markdown and bash instead of a real CLI?**
+Zero dependencies, readable by the agent itself, nothing to maintain or trust
+blindly. The brain files *are* the product — a CLI would just be wrapping
+paper.
+
+## What's next
+
+1. Install into a low-stakes project and run one small task at L1.
+2. Fill in your real build/test commands in `.loop/GATES.md`.
+3. After a week of clean reports, promote to L2 — a one-line edit.
+4. Pick a first recurring pattern (the changelog drafter is the safest start).
+5. Something broke? Open an issue. PRs welcome.
+
+## Credits
+
+The term and the system-level framing come from
+[Addy Osmani's Loop Engineering essay](https://addyosmani.com/blog/loop-engineering/),
+Boris Cherny's "my job is to write loops," and
+[Cobus Greyling's loop-engineering](https://github.com/cobusgreyling/loop-engineering)
+reference repo. This project is an independent implementation focused on the
+verification and memory layer — the brain the loops run on.
+
+## License
+
+MIT
