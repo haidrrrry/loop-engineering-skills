@@ -2,10 +2,25 @@
 # loop.sh — the loop: task -> act -> verify -> reflect -> retry or escalate.
 # Requires Claude Code (`claude` CLI) installed and authenticated.
 # Usage: .loop/bin/loop.sh "your task" [max_attempts]
+# Optional: LOOP_MAX_SECONDS=900 caps each attempt's wall-clock time — a
+# hard budget that halts a runaway loop instead of estimating its cost.
 set -uo pipefail
 
 TASK="${1:?Usage: loop.sh \"task description\" [max_attempts]}"
 MAX_ATTEMPTS="${2:-3}"
+LOOP_MAX_SECONDS="${LOOP_MAX_SECONDS:-0}"
+
+# Budget guardrail: wrap each attempt in `timeout` when a budget is set.
+TIMEOUT_CMD=()
+if [ "$LOOP_MAX_SECONDS" -gt 0 ] 2>/dev/null; then
+  if command -v timeout >/dev/null 2>&1; then
+    TIMEOUT_CMD=(timeout "$LOOP_MAX_SECONDS")
+  elif command -v gtimeout >/dev/null 2>&1; then
+    TIMEOUT_CMD=(gtimeout "$LOOP_MAX_SECONDS")
+  else
+    echo "WARN: LOOP_MAX_SECONDS set but no timeout/gtimeout found — budget not enforced." >&2
+  fi
+fi
 LOOP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 if ! command -v claude >/dev/null 2>&1; then
@@ -35,7 +50,7 @@ while [ "$attempt" -le "$MAX_ATTEMPTS" ]; do
   # ACT + VERIFY + REFLECT happen inside one agent run, governed by the brain
   # files and the installed loop-* skills. The prompt enforces the contract.
   set +o pipefail
-  claude -p "You are running inside a self-correcting loop (attempt $attempt of $MAX_ATTEMPTS).
+  ${TIMEOUT_CMD[@]+"${TIMEOUT_CMD[@]}"} claude -p "You are running inside a self-correcting loop (attempt $attempt of $MAX_ATTEMPTS).
 
 TASK: $TASK
 
@@ -65,6 +80,14 @@ Previous attempt verdict, if any: ${last_verdict:-none}" \
     ${PERM_ARGS[@]+"${PERM_ARGS[@]}"} 2>&1 | tee "$LOOP_DIR/last-run.log"
   claude_status=${PIPESTATUS[0]}
   set -o pipefail
+
+  # Budget exceeded: timeout(1) exits 124. Stop — a loop past its budget
+  # needs a human decision, not another attempt at the same spend.
+  if [ "$claude_status" -eq 124 ]; then
+    echo "==> BUDGET HALT: attempt exceeded LOOP_MAX_SECONDS=${LOOP_MAX_SECONDS}s." >&2
+    echo "    Partial output: .loop/last-run.log. Raise the budget or shrink the task." >&2
+    exit 3
+  fi
 
   # A CLI failure (auth, network, crash) is not a task failure — retrying
   # burns attempts on the same error. Stop and tell the human.

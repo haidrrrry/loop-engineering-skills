@@ -103,6 +103,10 @@ The brain files are editable contracts, not magic:
 - **Six system-loop patterns** (triage, PR babysitter, CI sweeper, dependency
   sweeper, changelog drafter, post-merge cleanup) with gates, memory specs,
   and escalation triggers per pattern: [`docs/patterns.md`](docs/patterns.md).
+- **Budget guardrail, not budget estimate:** `LOOP_MAX_SECONDS=900
+  .loop/bin/loop.sh "task"` hard-halts a runaway attempt at the limit and
+  hands you the partial log — a loop past its budget needs a human decision,
+  not another retry at the same spend.
 - **The failure catalog:** ten documented ways loops go wrong and how this
   design blocks each one: [`docs/anti-patterns.md`](docs/anti-patterns.md).
 

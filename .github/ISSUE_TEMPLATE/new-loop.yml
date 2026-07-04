@@ -1,0 +1,36 @@
+name: Propose a new loop
+description: New answer loop or system-loop pattern. No anchor, no loop — the form enforces the repo's core rule.
+title: "[loop] "
+labels: ["new-loop"]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Loop name
+      placeholder: e.g. Contract Loop
+    validations:
+      required: true
+  - type: textarea
+    id: anchor
+    attributes:
+      label: External anchor
+      description: What outside the answer does this loop check against? Tests, a spec, a rubric written first, a persona shift. "The model reads it again" is not an anchor and the proposal will be closed.
+    validations:
+      required: true
+  - type: textarea
+    id: stop
+    attributes:
+      label: Stop condition
+      description: When does the loop stop? Must be concrete (max passes, "critique returns only trivia", an executable check goes green).
+    validations:
+      required: true
+  - type: textarea
+    id: pattern
+    attributes:
+      label: If it's a system-loop pattern
+      description: "Then also specify all three: gates, what memory learns, escalation triggers (see docs/patterns.md for the shape)."
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence it works
+      description: A real before/after run, or research supporting the mechanism.

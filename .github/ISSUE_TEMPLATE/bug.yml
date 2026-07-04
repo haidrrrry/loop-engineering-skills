@@ -1,0 +1,25 @@
+name: Bug report
+description: Something in install.sh, loop.sh, the skills, or the docs is wrong.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Include the exact command and the exact output (quote errors verbatim).
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      placeholder: "macOS 15 / bash 3.2 / Claude Code 2.x"
+    validations:
+      required: true

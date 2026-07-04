@@ -1,0 +1,23 @@
+name: Model test report
+description: You ran the copy-paste loops on GPT, Kimi, Gemini, or another model — tell us how it went.
+title: "[model-report] "
+labels: ["model-report"]
+body:
+  - type: input
+    id: model
+    attributes:
+      label: Model and version
+      placeholder: "GPT-5.2 / Kimi K2 / Gemini 3 Pro"
+    validations:
+      required: true
+  - type: textarea
+    id: results
+    attributes:
+      label: What worked, what didn't
+      description: Which loops from prompts/copy-paste-loops.md you ran, on what kind of task, and what the loop caught or failed to catch.
+    validations:
+      required: true
+  - type: textarea
+    id: changes
+    attributes:
+      label: Prompt changes that helped
